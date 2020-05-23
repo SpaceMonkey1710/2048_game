@@ -123,3 +123,4 @@ def can_move(mas):
             if mas[i][j] == mas[i][j + 1] or mas[i][j] == mas[i + 1][j]:
                 return True
     return False
+

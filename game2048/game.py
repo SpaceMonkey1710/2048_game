@@ -2,7 +2,7 @@ import random
 import pygame
 import sys
 from logics import *
-from database import get_best, cur
+from database import get_best, cur, insert_result
 
 GAMERS_DB = get_best()
 
@@ -87,6 +87,7 @@ WIDTH = BLOCKS * SIZE_BLOCK + (BLOCKS + 1) * MARGIN
 HEIGHT = WIDTH + 110
 TITLE_REC = pygame.Rect(0, 0, WIDTH, 110)
 score = 0
+USERNAME = None
 
 mas[1][2] = 2
 mas[3][0] = 4
@@ -99,30 +100,131 @@ pretty_print(mas)
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('2048')
-draw_interface(score)
-pygame.display.update()
 
-while is_zero_in_mas(mas) or can_move(mas):
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit(0)
-        elif event.type == pygame.KEYDOWN:
-            delta = 0
-            if event.key == pygame.K_LEFT:
-                mas, delta = move_left(mas)
-            elif event.key == pygame.K_RIGHT:
-                mas, delta = move_right(mas)
-            elif event.key == pygame.K_UP:
-                mas, delta = move_up(mas)
-            elif event.key == pygame.K_DOWN:
-                mas, delta = move_down(mas)
-            score += delta
-            empty = get_empty_list(mas)
-            random.shuffle(empty)
-            random_num = empty.pop()
-            x, y = get_index_from_number(random_num)
-            mas = insert_2_or_4(mas, x, y)
-            print(f"We filled element number {random_num}")
-            draw_interface(score, delta)
-            pygame.display.update()
+
+def draw_intro():
+    img2048 = pygame.image.load('2048_logo.png')
+    font = pygame.font.SysFont('stxingkai', 70)
+    text_welcome = font.render('Welcome! ', True, WHITE)
+    name = 'Enter your name'
+    is_find_name = False
+    while not is_find_name:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit(0)
+            elif event.type == pygame.KEYDOWN:
+                if event.unicode.isalpha():
+                    if name == 'Enter your name':
+                        name = event.unicode
+                    else:
+                        name += event.unicode
+                elif event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                elif event.key == pygame.K_RETURN:
+                    if len(name) > 2:
+                        global USERNAME
+                        USERNAME = name
+                        is_find_name = True
+                        break
+
+        screen.fill(BLACK)
+        text_name = font.render(name, True, WHITE)
+        rect_name = text_name.get_rect()
+        rect_name.center = screen.get_rect().center
+        screen.blit(pygame.transform.scale(img2048, [200, 200]), [10, 10])
+        screen.blit(text_welcome, (230, 80))
+        screen.blit(text_name, rect_name)
+        pygame.display.update()
+    screen.fill(BLACK)
+
+
+def draw_game_over():
+    global USERNAME, mas, score
+    img2048 = pygame.image.load('2048_logo.png')
+    font = pygame.font.SysFont('stxingkai', 65)
+    text_game_over = font.render('Game over! ', True, WHITE)
+    text_score = font.render(f'Your score is {score} ', True, WHITE)
+    best_score = GAMERS_DB[0][1]
+    if score > best_score:
+        text = 'New record!'
+    else:
+        text = 'Keep trying!'
+    text_record = font.render(text, True, WHITE)
+    insert_result(USERNAME, score)
+    make_decision = False
+    while not make_decision:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit(0)
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    make_decision = True
+                    mas = [
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                    ]
+                    score = 0
+                elif event.type == pygame.K_RETURN:
+                    USERNAME = None
+                    make_decision = True
+                    mas = [
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                    ]
+                    score = 0
+        screen.fill(BLACK)
+        screen.blit(text_game_over, (220, 80))
+        screen.blit(text_score, (30, 250))
+        screen.blit(text_record, (30, 300))
+        screen.blit(pygame.transform.scale(img2048, [200, 200]), [10, 10])
+        pygame.display.update()
+
+    screen.fill(BLACK)
+
+def game_loop():
+    global score, mas
+    draw_interface(score)
+    pygame.display.update()
+
+    while is_zero_in_mas(mas) or can_move(mas):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit(0)
+            elif event.type == pygame.KEYDOWN:
+                delta = 0
+                if event.key == pygame.K_LEFT:
+                    mas, delta = move_left(mas)
+                elif event.key == pygame.K_RIGHT:
+                    mas, delta = move_right(mas)
+                elif event.key == pygame.K_UP:
+                    mas, delta = move_up(mas)
+                elif event.key == pygame.K_DOWN:
+                    mas, delta = move_down(mas)
+                score += delta
+                if is_zero_in_mas(mas):
+                    empty = get_empty_list(mas)
+                    random.shuffle(empty)
+                    random_num = empty.pop()
+                    x, y = get_index_from_number(random_num)
+                    mas = insert_2_or_4(mas, x, y)
+                    print(f"We filled element number {random_num}")
+                draw_interface(score, delta)
+                pygame.display.update()
+
+        print(USERNAME)
+
+
+while True:
+    if USERNAME is None:
+        draw_intro()
+
+    game_loop()
+
+    draw_game_over()
