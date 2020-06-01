@@ -49,13 +49,6 @@ def draw_interface(score, delta=0):
                 screen.blit(text, (text_x, text_y))
 
 
-mas = [
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-]
-
 COLOR_TEXT = (255, 127, 0)
 
 COLORS = {
@@ -86,11 +79,32 @@ MARGIN = 10
 WIDTH = BLOCKS * SIZE_BLOCK + (BLOCKS + 1) * MARGIN
 HEIGHT = WIDTH + 110
 TITLE_REC = pygame.Rect(0, 0, WIDTH, 110)
-score = 0
+
+
+def init_const():
+    global score, mas
+    mas = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+    empty = get_empty_list(mas)
+    random.shuffle(empty)
+    random_num1 = empty.pop()
+    random_num2 = empty.pop()
+    x1, y1 = get_index_from_number(random_num1)
+    mas = insert_2_or_4(mas, x1, y1)
+    x2, y2 = get_index_from_number(random_num2)
+    mas = insert_2_or_4(mas, x2, y2)
+    score = 0
+
+
+mas = None
+score = None
+init_const()
 USERNAME = None
 
-mas[1][2] = 2
-mas[3][0] = 4
 print(get_empty_list(mas))
 pretty_print(mas)
 
@@ -149,7 +163,7 @@ def draw_game_over():
     if score > best_score:
         text = 'New record!'
     else:
-        text = 'Keep trying!'
+        text = f'Best score is {best_score}'
     text_record = font.render(text, True, WHITE)
     insert_result(USERNAME, score)
     make_decision = False
@@ -161,31 +175,19 @@ def draw_game_over():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     make_decision = True
-                    mas = [
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                    ]
-                    score = 0
+                    init_const()
                 elif event.type == pygame.K_RETURN:
                     USERNAME = None
                     make_decision = True
-                    mas = [
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                        [0, 0, 0, 0],
-                    ]
-                    score = 0
+                    init_const()
         screen.fill(BLACK)
         screen.blit(text_game_over, (220, 80))
         screen.blit(text_score, (30, 250))
         screen.blit(text_record, (30, 300))
         screen.blit(pygame.transform.scale(img2048, [200, 200]), [10, 10])
         pygame.display.update()
-
     screen.fill(BLACK)
+
 
 def game_loop():
     global score, mas
@@ -208,6 +210,7 @@ def game_loop():
                 elif event.key == pygame.K_DOWN:
                     mas, delta = move_down(mas)
                 score += delta
+
                 if is_zero_in_mas(mas):
                     empty = get_empty_list(mas)
                     random.shuffle(empty)
@@ -224,7 +227,5 @@ def game_loop():
 while True:
     if USERNAME is None:
         draw_intro()
-
     game_loop()
-
     draw_game_over()
